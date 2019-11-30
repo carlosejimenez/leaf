@@ -92,7 +92,7 @@ def main():
     
     # Save server model
     ckpt_path = os.path.join('checkpoints', args.dataset)
-    if not os.path.exists(ckpt_path):
+    if not os.path.existsd(ckpt_path):
         os.makedirs(ckpt_path)
     save_path = server.save_model(os.path.join(ckpt_path, '{}.ckpt'.format(args.model)))
     print('Model saved in path: %s' % save_path)

@@ -9,6 +9,7 @@ class Server:
         self.model = client_model.get_params()
         self.selected_clients = []
         self.updates = []
+        self.gradients = []
 
     def select_clients(self, my_round, possible_clients, num_clients=20):
         """Selects num_clients clients randomly from possible_clients.
@@ -57,13 +58,14 @@ class Server:
                    LOCAL_COMPUTATIONS_KEY: 0} for c in clients}
         for c in clients:
             c.model.set_params(self.model)
-            comp, num_samples, update = c.train(num_epochs, batch_size, minibatch)
+            comp, num_samples, update, grads = c.train(num_epochs, batch_size, minibatch)
 
             sys_metrics[c.id][BYTES_READ_KEY] += c.model.size
             sys_metrics[c.id][BYTES_WRITTEN_KEY] += c.model.size
             sys_metrics[c.id][LOCAL_COMPUTATIONS_KEY] = comp
 
             self.updates.append((num_samples, update))
+            self.gradients.append((num_samples, grads))
 
         return sys_metrics
 
@@ -76,8 +78,19 @@ class Server:
                 base[i] += (client_samples * v.astype(np.float64))
         averaged_soln = [v / total_weight for v in base]
 
-        self.model = averaged_soln
+        grads = [np.zeros_like(g) for g in self.gradients[0][1]]
+        total_weight = 0
+        for (client_samples, client_grads) in self.gradients:
+            total_weight += client_samples
+            for i, grad in enumerate(client_grads):
+                grads[i] += client_samples * grad
+        avg_gradients = [g / total_weight for g in grads]
+
+        # self.model = averaged_soln  # self.model -= lr * avg_gradients
+        for i in range(len(self.model)):
+            self.model[i] -= avg_gradients[i]
         self.updates = []
+        self.gradients = []
 
     def test_model(self, clients_to_test, set_to_use='test'):
         """Tests self.model on given clients.

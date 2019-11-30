@@ -21,7 +21,7 @@ class Model(ABC):
         self.graph = tf.Graph()
         with self.graph.as_default():
             tf.set_random_seed(123 + seed)
-            self.features, self.labels, self.train_op, self.eval_metric_ops, self.loss = self.create_model()
+            self.features, self.labels, self.train_op, self.grad_op, self.eval_metric_ops, self.loss = self.create_model()
             self.saver = tf.train.Saver()
         self.sess = tf.Session(graph=self.graph)
 
@@ -81,12 +81,13 @@ class Model(ABC):
             update: List of np.ndarray weights, with each weight array
                 corresponding to a variable in the resulting graph
         """
+        grads = []
         for _ in range(num_epochs):
-            self.run_epoch(data, batch_size)
-
+            grads.append(self.run_epoch(data, batch_size))
         update = self.get_params()
+        # TODO: grads = self.get_grads()
         comp = num_epochs * (len(data['y'])//batch_size) * batch_size * self.flops
-        return comp, update
+        return comp, update, grads[0]
 
     def run_epoch(self, data, batch_size):
         for batched_x, batched_y in batch_data(data, batch_size):
@@ -95,11 +96,19 @@ class Model(ABC):
             target_data = self.process_y(batched_y)
             
             with self.graph.as_default():
+                grads = self.sess.run(self.grad_op,
+                                      feed_dict={
+                                          self.features: input_data,
+                                          self.labels: target_data
+                                      })
+                grads = [g[0] for g in grads]  # Each element of grads is (gradient, variables).
+                # TODO:R Remove run(train_op)
                 self.sess.run(self.train_op,
                     feed_dict={
                         self.features: input_data,
                         self.labels: target_data
                     })
+        return grads
 
     def test(self, data):
         """

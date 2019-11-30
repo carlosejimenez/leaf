@@ -41,11 +41,13 @@ class ClientModel(Model):
         }
         loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
         # TODO: Confirm that opt initialized once is ok?
+        # TODO: Introduce gradients variable to extract gradients after loss.
+        grad_op = self.optimizer.compute_gradients(loss=loss)
         train_op = self.optimizer.minimize(
             loss=loss,
             global_step=tf.train.get_global_step())
         eval_metric_ops = tf.count_nonzero(tf.equal(labels, predictions["classes"]))
-        return features, labels, train_op, eval_metric_ops, loss
+        return features, labels, train_op, grad_op, eval_metric_ops, loss
 
     def process_x(self, raw_x_batch):
         return np.array(raw_x_batch)
