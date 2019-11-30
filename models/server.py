@@ -66,7 +66,7 @@ class Server:
             sys_metrics[c.id][LOCAL_COMPUTATIONS_KEY] = comp
 
             # self.updates.append((num_samples, update))
-            self.gradients.append((num_samples, grads))
+            self.gradients.append((num_samples, c.id, grads))
 
         return sys_metrics
 
@@ -109,9 +109,9 @@ class Server:
         return metrics
 
     def get_averaged_gradients(self):
-        grads = [np.zeros_like(g) for g in self.gradients[0][1]]
+        grads = [np.zeros_like(g) for g in self.gradients[0][2]]
         total_weight = 0
-        for (client_samples, client_grads) in self.gradients:
+        for (client_samples, c_id, client_grads) in self.gradients:
             total_weight += client_samples
             for i, grad in enumerate(client_grads):
                 grads[i] += client_samples * grad
