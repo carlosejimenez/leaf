@@ -8,7 +8,7 @@ class Server:
         self.client_model = client_model
         self.model = client_model.get_params()
         self.selected_clients = []
-        self.updates = []
+        # self.updates = []
         self.gradients = []
 
     def select_clients(self, my_round, possible_clients, num_clients=20):
@@ -58,25 +58,26 @@ class Server:
                    LOCAL_COMPUTATIONS_KEY: 0} for c in clients}
         for c in clients:
             c.model.set_params(self.model)
-            comp, num_samples, update, grads = c.train(num_epochs, batch_size, minibatch)
+            # comp, num_samples, update, grads = c.train(num_epochs, batch_size, minibatch)
+            comp, num_samples, grads = c.train(num_epochs, batch_size, minibatch)
 
             sys_metrics[c.id][BYTES_READ_KEY] += c.model.size
             sys_metrics[c.id][BYTES_WRITTEN_KEY] += c.model.size
             sys_metrics[c.id][LOCAL_COMPUTATIONS_KEY] = comp
 
-            self.updates.append((num_samples, update))
+            # self.updates.append((num_samples, update))
             self.gradients.append((num_samples, grads))
 
         return sys_metrics
 
     def update_model(self):
-        total_weight = 0.
-        base = [0] * len(self.updates[0][1])
-        for (client_samples, client_model) in self.updates:
-            total_weight += client_samples
-            for i, v in enumerate(client_model):
-                base[i] += (client_samples * v.astype(np.float64))
-        averaged_soln = [v / total_weight for v in base]
+        # total_weight = 0.
+        # base = [0] * len(self.updates[0][1])
+        # for (client_samples, client_model) in self.updates:
+        #     total_weight += client_samples
+        #     for i, v in enumerate(client_model):
+        #         base[i] += (client_samples * v.astype(np.float64))
+        # averaged_soln = [v / total_weight for v in base]
 
         grads = [np.zeros_like(g) for g in self.gradients[0][1]]
         total_weight = 0
@@ -89,7 +90,7 @@ class Server:
         # self.model = averaged_soln  # self.model -= lr * avg_gradients
         for i in range(len(self.model)):
             self.model[i] -= avg_gradients[i]
-        self.updates = []
+        # self.updates = []
         self.gradients = []
 
     def test_model(self, clients_to_test, set_to_use='test'):
