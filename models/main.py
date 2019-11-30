@@ -83,7 +83,12 @@ def main():
         sys_metrics = server.train_model(num_epochs=args.num_epochs, batch_size=args.batch_size, minibatch=args.minibatch)
         sys_writer_fn(i + 1, c_ids, sys_metrics, c_groups, c_num_samples)
 
+        avg_gradients = server.get_averaged_gradients()  # < use this to cluster. After update_model, the model changes
+        # ^ returns a list of ndarrays corresponding to fed avg grads of
+        # each variable of the model. (with the same size, ofc)
+
         # Update server model
+        # Gradients are cleared after updating!
         server.update_model()
 
         # Test model

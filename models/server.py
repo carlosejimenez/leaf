@@ -79,13 +79,7 @@ class Server:
         #         base[i] += (client_samples * v.astype(np.float64))
         # averaged_soln = [v / total_weight for v in base]
 
-        grads = [np.zeros_like(g) for g in self.gradients[0][1]]
-        total_weight = 0
-        for (client_samples, client_grads) in self.gradients:
-            total_weight += client_samples
-            for i, grad in enumerate(client_grads):
-                grads[i] += client_samples * grad
-        avg_gradients = [g / total_weight for g in grads]
+        avg_gradients = self.get_averaged_gradients()
 
         # self.model = averaged_soln  # self.model -= lr * avg_gradients
         for i in range(len(self.model)):
@@ -113,6 +107,17 @@ class Server:
             metrics[client.id] = c_metrics
         
         return metrics
+
+    def get_averaged_gradients(self):
+        grads = [np.zeros_like(g) for g in self.gradients[0][1]]
+        total_weight = 0
+        for (client_samples, client_grads) in self.gradients:
+            total_weight += client_samples
+            for i, grad in enumerate(client_grads):
+                grads[i] += client_samples * grad
+        avg_gradients = [g / total_weight for g in grads]
+
+        return avg_gradients
 
     def get_clients_info(self, clients):
         """Returns the ids, hierarchies and num_samples for the given clients.
