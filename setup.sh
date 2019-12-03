@@ -5,4 +5,4 @@ conda activate leaf
 conda install tensorflow=1.12.0 -y 
 conda install numpy scipy Pillow matplotlib jupyter pandas nomkl -y
 cd ./data/femnist
-./preprocess.sh -s niid --sf 1.0 -k 0 -t sample
+./preprocess.sh -s niid --sf 0.2 -k 0 -t sample
