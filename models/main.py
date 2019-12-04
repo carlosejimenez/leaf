@@ -21,6 +21,7 @@ from utils.model_utils import read_data
 
 STAT_METRICS_PATH = 'metrics/stat_metrics.csv'
 SYS_METRICS_PATH = 'metrics/sys_metrics.csv'
+DATETIME = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def main():
 
@@ -59,6 +60,8 @@ def main():
     tf.reset_default_graph()
     client_model = ClientModel(args.seed, *model_params)
 
+    # client_model.saver.restore(client_model.sess, save_path='./checkpoints/femnist/cnn.ckpt')
+
     # Create server
     server = Server(client_model)
 
@@ -94,8 +97,6 @@ def main():
         # Gradients are cleared after updating!
         server.update_model()
 
-        print(np.max(np.abs(last_model[0] - server.model[0])))
-
         last_model = server.model.copy()
 
         # Test model
@@ -103,7 +104,7 @@ def main():
             print_stats(i + 1, server, clients, client_num_samples, args, stat_writer_fn)
 
     try:
-        pickle.dump(server.model, open(f'model{datetime.datetime.now()}.P', 'wb+'))
+        pickle.dump(server.model, open(f'model{DATETIME}.P', 'wb+'))
         print(f'server.model raw saved')
     except:
         print(f'server.model raw NOT saved')
@@ -165,14 +166,16 @@ def get_sys_writer_function(args):
 
 def print_stats(
     num_round, server, clients, num_samples, args, writer):
-    
+
     train_stat_metrics = server.test_model(clients, set_to_use='train')
     print_metrics(train_stat_metrics, num_samples, prefix='train_')
-    writer(num_round, train_stat_metrics, 'train')
+    save_metrics(train_stat_metrics, num_samples, num_round, prefix='train')
+    # writer(num_round, train_stat_metrics, 'train')
 
     test_stat_metrics = server.test_model(clients, set_to_use='test')
     print_metrics(test_stat_metrics, num_samples, prefix='test_')
-    writer(num_round, test_stat_metrics, 'test')
+    save_metrics(test_stat_metrics, num_samples, num_round, prefix='test')
+    # writer(num_round, test_stat_metrics, 'test')
 
 
 def print_metrics(metrics, weights, prefix=''):
@@ -195,6 +198,27 @@ def print_metrics(metrics, weights, prefix=''):
                  np.percentile(ordered_metric, 10),
                  np.percentile(ordered_metric, 50),
                  np.percentile(ordered_metric, 90)))
+
+
+def save_metrics(metrics, weights, round, prefix=''):
+    """Saves weighted averages of the given metrics.
+
+    Args:
+        metrics: dict with client ids as keys. Each entry is a dict
+            with the metrics of that client.
+        weights: dict with client ids as keys. Each entry is the weight
+            for that client.
+    """
+    ordered_weights = [weights[c] for c in sorted(weights)]
+    metric_names = metrics_writer.get_metrics_names(metrics)
+    dirpath = os.path.abspath('./my_metrics/')
+    os.makedirs(dirpath, exist_ok=dirpath)
+    for metric in metric_names:
+        filename = dirpath + f'/{prefix}-{metric}-{DATETIME}.csv'
+        with open(filename, 'a+') as outfile:
+            ordered_metric = [metrics[c][metric] for c in sorted(metrics)]
+            val = np.average(ordered_metric, weights=ordered_weights)
+            outfile.write(f'{val},{round}\n')
 
 
 if __name__ == '__main__':
