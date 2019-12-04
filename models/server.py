@@ -82,8 +82,7 @@ class Server:
         avg_gradients = self.get_averaged_gradients()
 
         # self.model = averaged_soln  # self.model -= lr * avg_gradients
-        for i in range(len(self.model)):
-            self.model[i] -= avg_gradients[i]
+        self.model = [m - p for m, p in zip(self.model, avg_gradients)]
         # self.updates = []
         self.gradients = []
 
@@ -114,7 +113,7 @@ class Server:
         for (client_samples, c_id, client_grads) in self.gradients:
             total_weight += client_samples
             for i, grad in enumerate(client_grads):
-                grads[i] += client_samples * grad
+                grads[i] += client_samples * grad * self.client_model.lr
         avg_gradients = [g / total_weight for g in grads]
 
         return avg_gradients
@@ -139,7 +138,7 @@ class Server:
         """Saves the server model on checkpoints/dataset/model.ckpt."""
         # Save server model
         self.client_model.set_params(self.model)
-        model_sess =  self.client_model.sess
+        model_sess = self.client_model.sess
         return self.client_model.saver.save(model_sess, path)
 
     def close_model(self):
