@@ -5,6 +5,8 @@ import numpy as np
 import os
 import sys
 import random
+import datetime
+import pickle
 import tensorflow as tf
 
 import metrics.writer as metrics_writer
@@ -71,6 +73,8 @@ def main():
     sys_writer_fn = get_sys_writer_function(args)
     print_stats(0, server, clients, client_num_samples, args, stat_writer_fn)
 
+    last_model = server.model.copy()
+
     # Simulate training
     for i in range(num_rounds):
         print('--- Round %d of %d: Training %d Clients ---' % (i + 1, num_rounds, clients_per_round))
@@ -90,13 +94,22 @@ def main():
         # Gradients are cleared after updating!
         server.update_model()
 
+        print(np.max(np.abs(last_model[0] - server.model[0])))
+
+        last_model = server.model.copy()
+
         # Test model
         if (i + 1) % eval_every == 0 or (i + 1) == num_rounds:
             print_stats(i + 1, server, clients, client_num_samples, args, stat_writer_fn)
 
+    try:
+        pickle.dump(server.model, open(f'model{datetime.datetime.now()}.P', 'wb+'))
+        print(f'server.model raw saved')
+    except:
+        print(f'server.model raw NOT saved')
     # Save server model
     ckpt_path = os.path.join('checkpoints', args.dataset)
-    if not os.path.existsd(ckpt_path):
+    if not os.path.exists(ckpt_path):
         os.makedirs(ckpt_path)
     save_path = server.save_model(os.path.join(ckpt_path, '{}.ckpt'.format(args.model)))
     print('Model saved in path: %s' % save_path)
