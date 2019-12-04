@@ -90,8 +90,8 @@ def main():
         sys_metrics = server.train_model(num_epochs=args.num_epochs, batch_size=args.batch_size, minibatch=args.minibatch)
         sys_writer_fn(i + 1, c_ids, sys_metrics, c_groups, c_num_samples)
 
-        client_gradients = server.gradients  # < use this to cluster. After update_model, the model changes
-        # ^ returns a list of tuples-(sample_size, client_id, and list of client gradients for each variable)
+        client_gradients = server.get_client_gradients()  # < use this to cluster. After update_model, the model changes
+        # ^ returns a list of tuples-(sample_size, client_id, and high-dimensional single gradient vector)
 
         # Update server model
         # Gradients are cleared after updating!
@@ -104,7 +104,9 @@ def main():
             print_stats(i + 1, server, clients, client_num_samples, args, stat_writer_fn)
 
     try:
-        pickle.dump(server.model, open(f'model{DATETIME}.P', 'wb+'))
+        outpath = os.path.abspath('./saved_models/')
+        os.makedirs(outpath, exist_ok=True)
+        pickle.dump(server.model, open(outpath + f'/model-{DATETIME}.P', 'wb+'))
         print(f'server.model raw saved')
     except:
         print(f'server.model raw NOT saved')

@@ -66,7 +66,7 @@ class Server:
             sys_metrics[c.id][LOCAL_COMPUTATIONS_KEY] = comp
 
             # self.updates.append((num_samples, update))
-            self.gradients.append((num_samples, c.id, grads))
+            self.gradients.append([num_samples, c.id, grads])
 
         return sys_metrics
 
@@ -117,6 +117,12 @@ class Server:
         avg_gradients = [g / total_weight for g in grads]
 
         return avg_gradients
+
+    def get_client_gradients(self):
+        client_grads = self.gradients.copy()
+        for i in range(len(client_grads)):
+            client_grads[i][2] = np.concatenate(list(map(lambda x: x.flatten().reshape(-1, 1), client_grads[i][2]))).reshape(-1)
+        return client_grads
 
     def get_clients_info(self, clients):
         """Returns the ids, hierarchies and num_samples for the given clients.
