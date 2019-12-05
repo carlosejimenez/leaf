@@ -45,6 +45,11 @@ def parse_args():
                     type=str,
                     default='metrics',
                     required=False)
+    parser.add_argument('--init-path',
+                        help='path to initialized model',
+                        type=str,
+                        default=None,
+                        required=False)
 
     # Minibatch doesn't support num_epochs, so make them mutually exclusive
     epoch_capability_group = parser.add_mutually_exclusive_group()

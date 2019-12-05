@@ -21,7 +21,7 @@ from utils.model_utils import read_data
 
 STAT_METRICS_PATH = 'metrics/stat_metrics.csv'
 SYS_METRICS_PATH = 'metrics/sys_metrics.csv'
-DATETIME = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+DATETIME = datetime.datetime.now().strftime("%Y-%m-%d+%H:%M:%S")
 
 
 def main():
@@ -61,10 +61,11 @@ def main():
     tf.reset_default_graph()
     client_model = ClientModel(args.seed, *model_params)
 
-    # client_model.saver.restore(client_model.sess, save_path='./checkpoints/femnist/cnn.ckpt')
-
     # Create server
     server = Server(client_model)
+
+    if args.init_path is not None and os.path.exists(args.init_path):
+        server.model = pickle.load(open(args.init_path, 'rb'))
 
     # Create clients
     clients = setup_clients(args.dataset, client_model)
@@ -72,7 +73,7 @@ def main():
     print('Clients in Total: %d' % len(clients))
 
     # Initial status
-    print('--- Random Initialization ---')
+    print('--- Initial Performance ---')
     stat_writer_fn = get_stat_writer_function(client_ids, client_groups, client_num_samples, args)
     sys_writer_fn = get_sys_writer_function(args)
     print_stats(0, server, clients, client_num_samples, args, stat_writer_fn)
