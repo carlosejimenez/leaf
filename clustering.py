@@ -1,20 +1,33 @@
 import numpy as np
 import sklearn as sk
 import matplotlib.pyplot as plt
+import sklearn.cluster
 from sklearn.decomposition import PCA
 
 
-class Cluster:
-    def __init__(self, client_ids, gradients):
-        from sklearn.cluster import OPTICS
-        clusterer = OPTICS()
-        self.cluster_tuple = cluster_gradients(client_ids, gradients, clusterer)
+class Clustering:
+    def __init__(self, gradients, algorithm, num_clusters):
+
+        if algorithm == 'Affinity':
+            self.clusterer = sklearn.cluster.AffinityPropagation()
+        elif algorithm == 'Agglo':
+            self.clusterer = sklearn.cluster.AgglomerativeClustering(n_clusters=num_clusters)
+        elif algorithm == 'Birch':
+            self.clusterer = sklearn.cluster.Birch(n_clusters=num_clusters)
+
+        self.cluster_tuple = cluster_gradients(gradients, self.clusterer)
 
     def get_cluster(self, client_id):
         return self.cluster_tuple[3][client_id]
 
+    def predict(self, gradient):
+        gradient = np.reshape(gradient, (1, len(gradient)))
+        cluster_id = self.clusterer.predict(gradient)[0]
+        return cluster_id
 
-def cluster_gradients(gradient_ids, gradients, clusterer, projector=PCA(n_components=2), title="PCA Projection of Gradients. Colored by cluster.", cmap='hsv'):
+
+
+def cluster_gradients(gradients, clusterer, projector=PCA(n_components=2), title="PCA Projection of Gradients. Colored by cluster.", cmap='hsv'):
     """
     Parameters:
         gradient_ids: np array. Shape: (num_clients,)
@@ -41,9 +54,6 @@ def cluster_gradients(gradient_ids, gradients, clusterer, projector=PCA(n_compon
         plt.scatter(proj[:, 0], proj[:, 1], c=colors)
         plt.show()
 
-    for client_num in range(len(c_labels)):
-        client_to_cluster_dictionary[gradient_ids[client_num]] = c_labels[client_num]
-
     return C, c_labels, clusterer, client_to_cluster_dictionary
 
 
@@ -53,9 +63,9 @@ def cluster_gradients(gradient_ids, gradients, clusterer, projector=PCA(n_compon
 #     digits = load_digits()
 #     data = digits.data
 #     ids = np.arange(data.shape[0])
-#     clusterer = OPTICS()
-#     cluster_gradients(ids, data, clusterer)
-#
+#     c = Clustering(data, 'Affinity', 5)
+#     label = c.predict(data[1])
+#     print(label)
 #
 # if __name__ == '__main__':
 #     __test_clustering()
