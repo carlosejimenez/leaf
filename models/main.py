@@ -43,7 +43,7 @@ def main():
     if not os.path.exists(model_path):
         print('Please specify a valid dataset and a valid model.')
     model_path = '%s.%s' % (args.dataset, args.model)
-    
+
     print('############################## %s ##############################' % model_path)
     mod = importlib.import_module(model_path)
     ClientModel = getattr(mod, 'ClientModel')
@@ -92,6 +92,7 @@ def main():
             server.create_personalized_models(online(clients), personalization_percent,
                                               num_epochs=args.num_epochs, batch_size=args.batch_size,
                                               minibatch=args.minibatch, cluster_algo=cluster_algo, num_clusters=number_clusters)
+            server.assign_clusters(online(clients), num_epochs=args.num_epochs, batch_size=args.batch_size, minibatch=args.minibatch)
 
         # Select clients to train this round
         server.select_clients(i, online(clients), num_clients=clients_per_round)

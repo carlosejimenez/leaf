@@ -3,13 +3,21 @@ import warnings
 
 
 class Client:
-    
+
     def __init__(self, client_id, group=None, train_data={'x' : [],'y' : []}, eval_data={'x' : [],'y' : []}, model=None):
         self._model = model
         self.id = client_id # integer
         self.group = group
         self.train_data = train_data
         self.eval_data = eval_data
+        self.cluster = None
+
+
+    def set_cluster_id(self, cluster_id):
+        self.cluster = cluster_id
+
+    def get_cluster_id(self):
+        return self.cluster
 
     def train(self, num_epochs=1, batch_size=10, minibatch=None):
         """Trains on self.model using the client's train_data.
@@ -45,7 +53,7 @@ class Client:
 
     def test(self, set_to_use='test'):
         """Tests self.model on self.test_data.
-        
+
         Args:
             set_to_use. Set to test on. Should be in ['train', 'test'].
         Return:
@@ -91,7 +99,7 @@ class Client:
         if self.train_data is not None:
             train_size = len(self.train_data['y'])
 
-        test_size = 0 
+        test_size = 0
         if self.eval_data is not  None:
             test_size = len(self.eval_data['y'])
         return train_size + test_size

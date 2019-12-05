@@ -5,7 +5,7 @@ from math import floor
 from baseline_constants import BYTES_WRITTEN_KEY, BYTES_READ_KEY, LOCAL_COMPUTATIONS_KEY
 
 class Server:
-    
+
     def __init__(self, client_model):
         self.client_model = client_model
         self.model = client_model.get_params()
@@ -32,7 +32,7 @@ class Server:
 
     def select_clients(self, my_round, possible_clients, num_clients=20):
         """Selects num_clients clients randomly from possible_clients.
-        
+
         Note that within function, num_clients is set to
             min(num_clients, len(possible_clients)).
 
@@ -48,9 +48,15 @@ class Server:
 
         return [(c.num_train_samples, c.num_test_samples) for c in self.selected_clients]
 
+    def assign_clusters(self, clients, num_epochs=1, batch_size=10, minibatch=None):
+        for c in clients:
+            c.model.set_params(self.model)
+            client_tuple = c.train(num_epochs, batch_size, minibatch)
+            c.set_cluster_id(self.clusterer.predict(self.get_dense_gradients(client_tuple))[0])
+
     def train_model(self, num_epochs=1, batch_size=10, minibatch=None, clients=None):
         """Trains self.model on given clients.
-        
+
         Trains model on self.selected_clients if clients=None;
         each client's data is trained with the given number of epochs
         and batches.
@@ -62,7 +68,7 @@ class Server:
             minibatch: fraction of client's data to apply minibatch sgd,
                 None to use FedAvg
         Return:
-            bytes_written: number of bytes written by each client to server 
+            bytes_written: number of bytes written by each client to server
                 dictionary with client ids as keys and integer values.
             client computations: number of FLOPs computed by each client
                 dictionary with client ids as keys and integer values.
@@ -84,16 +90,14 @@ class Server:
                 self.gradients.append([])
 
         for c in clients:
-            c.model.set_params(self.model)
-            # comp, num_samples, update, grads = c.train(num_epochs, batch_size, minibatch)
-            comp, num_samples, grads = c.train(num_epochs, batch_size, minibatch)
 
             if self.personalized_models is not None:
-                client_tuple = (num_samples, c.id, grads)
-                processed_grad = self.get_dense_gradients(client_tuple)
-                cluster_id = self.clusterer.predict(processed_grad)[0]
-                c.model.set_params(self.personalized_models[cluster_id])
-                comp, num_samples, grads = c.train(num_epochs, batch_size, minibatch)
+                c.model.set_params(self.personalized_models[c.get_cluster_id()])
+            else:
+                c.model.set_params(self.model)
+                # comp, num_samples, update, grads = c.train(num_epochs, batch_size, minibatch)
+
+            comp, num_samples, grads = c.train(num_epochs, batch_size, minibatch)
 
             sys_metrics[c.id][BYTES_READ_KEY] += c.model.size
             sys_metrics[c.id][BYTES_WRITTEN_KEY] += c.model.size
@@ -101,7 +105,7 @@ class Server:
 
             # self.updates.append((num_samples, update))
             if self.personalized_models is not None:
-                self.gradients[cluster_id].append((num_samples, c.id, grads))
+                self.gradients[c.get_cluster_id()].append((num_samples, c.id, grads))
             else:
                 self.gradients.append((num_samples, c.id, grads))
 
@@ -147,18 +151,15 @@ class Server:
             clients_to_test = self.selected_clients
 
         for client in clients_to_test:
-            client.model.set_params(self.model)
 
             if self.personalized_models is not None:
-                _, num_samples, grads = client.train(num_epochs, batch_size, minibatch)
-                client_tuple = (num_samples, client.id, grads)
-                processed_grad = self.get_dense_gradients(client_tuple)
-                cluster_id = self.clusterer.predict(processed_grad)[0]
-                client.model.set_params(self.personalized_models[cluster_id])
+                client.model.set_params(self.personalized_models[client.get_cluster_id()])
+            else:
+                client.model.set_params(self.model)
 
             c_metrics = client.test(set_to_use)
             metrics[client.id] = c_metrics
-        
+
         return metrics
 
     def get_averaged_gradients(self, gradients):
