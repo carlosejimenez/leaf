@@ -212,10 +212,12 @@ def save_metrics(metrics, weights, round, prefix=''):
     """
     ordered_weights = [weights[c] for c in sorted(weights)]
     metric_names = metrics_writer.get_metrics_names(metrics)
-    dirpath = os.path.abspath('./my_metrics/')
+    dirpath = os.path.abspath(f'./my_metrics/{DATETIME}')
     os.makedirs(dirpath, exist_ok=dirpath)
     for metric in metric_names:
-        filename = dirpath + f'/{prefix}-{metric}-{DATETIME}.csv'
+        filename = dirpath + f'/{prefix}-{metric}.csv'
+        if not os.path.exists(filename):
+            open(filename, 'w+').write(f'{metric},round\n')
         with open(filename, 'a+') as outfile:
             ordered_metric = [metrics[c][metric] for c in sorted(metrics)]
             val = np.average(ordered_metric, weights=ordered_weights)
