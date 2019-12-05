@@ -23,6 +23,7 @@ STAT_METRICS_PATH = 'metrics/stat_metrics.csv'
 SYS_METRICS_PATH = 'metrics/sys_metrics.csv'
 DATETIME = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+
 def main():
 
     args = parse_args()
@@ -106,6 +107,7 @@ def main():
         print(f'server.model raw saved')
     except:
         print(f'server.model raw NOT saved')
+
     # Save server model
     ckpt_path = os.path.join('checkpoints', args.dataset)
     if not os.path.exists(ckpt_path):
