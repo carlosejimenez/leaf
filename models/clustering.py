@@ -14,6 +14,8 @@ class Clustering:
             self.clusterer = sklearn.cluster.AgglomerativeClustering(n_clusters=num_clusters)
         elif algorithm == 'Birch':
             self.clusterer = sklearn.cluster.Birch(n_clusters=num_clusters)
+        elif algorithm == 'K-Means':
+            self.clusterer = sklearn.cluster.KMeans(n_clusters=num_clusters, init='k-means++')
 
         self.cluster_tuple = cluster_gradients(gradients, self.clusterer)
 

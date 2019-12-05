@@ -26,6 +26,8 @@ DATETIME = datetime.datetime.now().strftime("%Y-%m-%d+%H:%M:%S")
 
 def main():
 
+    print(f'{DATETIME}')
+
     args = parse_args()
 
     # Set the random seed if provided (affects client sampling, and batching)
@@ -92,7 +94,7 @@ def main():
             server.create_personalized_models(online(clients), personalization_percent,
                                               num_epochs=args.num_epochs, batch_size=args.batch_size,
                                               minibatch=args.minibatch, cluster_algo=cluster_algo, num_clusters=number_clusters)
-            server.assign_clusters(online(clients), num_epochs=args.num_epochs, batch_size=args.batch_size, minibatch=args.minibatch)
+            server.assign_clusters(online(clients), num_epochs=args.num_epochs, batch_size=args.batch_size, minibatch=0.4)
 
         # Select clients to train this round
         server.select_clients(i, online(clients), num_clients=clients_per_round)

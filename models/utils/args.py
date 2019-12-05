@@ -85,8 +85,8 @@ def parse_args():
                         required=False)
     parser.add_argument('-clusterer',
                         type=str,
-                        choices=['Affinity', 'Agglo', 'Birch'],
-                        default='Affinity')
+                        choices=['Affinity', 'Agglo', 'Birch', 'K-Means'],
+                        default='K-Means')
     parser.add_argument('-num_clusters',
                         type=int,
                         default=10)
