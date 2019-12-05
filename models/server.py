@@ -121,7 +121,7 @@ class Server:
     def get_client_gradients(self):
         client_grads = self.gradients.copy()
         for i in range(len(client_grads)):
-            client_grads[i][2] = np.concatenate(list(map(lambda x: x.flatten().reshape(-1, 1), client_grads[i][2]))).reshape(-1)
+            client_grads[i][2] = np.concatenate(list(map(lambda x: x.flatten().reshape(-1), client_grads[i][2])))
         return client_grads
 
     def get_clients_info(self, clients):

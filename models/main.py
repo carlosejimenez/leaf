@@ -76,8 +76,6 @@ def main():
     sys_writer_fn = get_sys_writer_function(args)
     print_stats(0, server, clients, client_num_samples, args, stat_writer_fn)
 
-    last_model = server.model.copy()
-
     # Simulate training
     for i in range(num_rounds):
         print('--- Round %d of %d: Training %d Clients ---' % (i + 1, num_rounds, clients_per_round))
@@ -90,14 +88,12 @@ def main():
         sys_metrics = server.train_model(num_epochs=args.num_epochs, batch_size=args.batch_size, minibatch=args.minibatch)
         sys_writer_fn(i + 1, c_ids, sys_metrics, c_groups, c_num_samples)
 
-        client_gradients = server.get_client_gradients()  # < use this to cluster. After update_model, the model changes
+        # client_gradients = server.get_client_gradients()  # < use this to cluster. After update_model, the model changes
         # ^ returns a list of tuples-(sample_size, client_id, and high-dimensional single gradient vector)
 
         # Update server model
         # Gradients are cleared after updating!
         server.update_model()
-
-        last_model = server.model.copy()
 
         # Test model
         if (i + 1) % eval_every == 0 or (i + 1) == num_rounds:
@@ -170,17 +166,17 @@ def print_stats(
     num_round, server, clients, num_samples, args, writer):
 
     train_stat_metrics = server.test_model(clients, set_to_use='train')
-    print_metrics(train_stat_metrics, num_samples, prefix='train_')
+    print_metrics(train_stat_metrics, num_samples, num_round, prefix='train_')
     save_metrics(train_stat_metrics, num_samples, num_round, prefix='train')
     # writer(num_round, train_stat_metrics, 'train')
 
     test_stat_metrics = server.test_model(clients, set_to_use='test')
-    print_metrics(test_stat_metrics, num_samples, prefix='test_')
+    print_metrics(test_stat_metrics, num_samples, num_round, prefix='test_')
     save_metrics(test_stat_metrics, num_samples, num_round, prefix='test')
     # writer(num_round, test_stat_metrics, 'test')
 
 
-def print_metrics(metrics, weights, prefix=''):
+def print_metrics(metrics, weights, num_round, prefix=''):
     """Prints weighted averages of the given metrics.
 
     Args:
