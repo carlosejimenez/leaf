@@ -33,6 +33,12 @@ def main():
     np.random.seed(12 + args.seed)
     tf.set_random_seed(123 + args.seed)
 
+    # When to switch to personalized models
+    personalization_round = args.pr
+    personalization_percent = args.personalization
+    cluster_algo = args.clusterer
+    number_clusters = args.num_clusters
+
     model_path = '%s/%s.py' % (args.dataset, args.model)
     if not os.path.exists(model_path):
         print('Please specify a valid dataset and a valid model.')
@@ -76,11 +82,16 @@ def main():
     print('--- Initial Performance ---')
     stat_writer_fn = get_stat_writer_function(client_ids, client_groups, client_num_samples, args)
     sys_writer_fn = get_sys_writer_function(args)
-    print_stats(0, server, clients, client_num_samples, args, stat_writer_fn)
+    print_stats(0, server, clients, client_num_samples, args, stat_writer_fn, num_epochs=args.num_epochs, batch_size=args.batch_size, minibatch=args.minibatch)
 
     # Simulate training
     for i in range(num_rounds):
         print('--- Round %d of %d: Training %d Clients ---' % (i + 1, num_rounds, clients_per_round))
+
+        if i == personalization_round:
+            server.create_personalized_models(online(clients), personalization_percent,
+                                              num_epochs=args.num_epochs, batch_size=args.batch_size,
+                                              minibatch=args.minibatch, cluster_algo=cluster_algo, num_clusters=number_clusters)
 
         # Select clients to train this round
         server.select_clients(i, online(clients), num_clients=clients_per_round)
@@ -99,7 +110,7 @@ def main():
 
         # Test model
         if (i + 1) % eval_every == 0 or (i + 1) == num_rounds:
-            print_stats(i + 1, server, clients, client_num_samples, args, stat_writer_fn)
+            print_stats(i + 1, server, clients, client_num_samples, args, stat_writer_fn, num_epochs=args.num_epochs, batch_size=args.batch_size, minibatch=args.minibatch)
 
     try:
         outpath = os.path.abspath('./saved_models/')
@@ -166,9 +177,9 @@ def get_sys_writer_function(args):
 
 
 def print_stats(
-    num_round, server, clients, num_samples, args, writer):
+    num_round, server, clients, num_samples, args, writer, num_epochs, batch_size, minibatch):
 
-    train_stat_metrics = server.test_model(clients, set_to_use='train')
+    train_stat_metrics = server.test_model(clients, set_to_use='train', num_epochs=num_epochs, batch_size=batch_size, minibatch=minibatch)
     print_metrics(train_stat_metrics, num_samples, num_round, prefix='train_')
     save_metrics(train_stat_metrics, num_samples, num_round, prefix='train')
     # writer(num_round, train_stat_metrics, 'train')

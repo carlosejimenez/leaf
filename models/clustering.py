@@ -1,5 +1,4 @@
 import numpy as np
-import sklearn as sk
 import matplotlib.pyplot as plt
 import sklearn.cluster
 from sklearn.decomposition import PCA
@@ -7,7 +6,8 @@ from sklearn.decomposition import PCA
 
 class Clustering:
     def __init__(self, gradients, algorithm, num_clusters):
-
+        self.algorithm = algorithm
+        self.c_count = num_clusters #Number of clusters
         if algorithm == 'Affinity':
             self.clusterer = sklearn.cluster.AffinityPropagation()
         elif algorithm == 'Agglo':
@@ -21,13 +21,17 @@ class Clustering:
         return self.cluster_tuple[3][client_id]
 
     def predict(self, gradient):
-        gradient = np.reshape(gradient, (1, len(gradient)))
-        cluster_id = self.clusterer.predict(gradient)[0]
+        #gradient = np.reshape(gradient, (1, len(gradient)))
+        cluster_id = self.clusterer.predict(gradient)#[0]
         return cluster_id
 
+    def number_clusters(self):
+        if self.algorithm == 'Affinity':
+            return self.clusterer.cluster_centers_indices_.shape[0]
+        return self.c_count
 
 
-def cluster_gradients(gradients, clusterer, projector=PCA(n_components=2), title="PCA Projection of Gradients. Colored by cluster.", cmap='hsv'):
+def cluster_gradients(gradients, clusterer, projector=None, title="PCA Projection of Gradients. Colored by cluster.", cmap='hsv'):
     """
     Parameters:
         gradient_ids: np array. Shape: (num_clients,)
@@ -55,17 +59,3 @@ def cluster_gradients(gradients, clusterer, projector=PCA(n_components=2), title
         plt.show()
 
     return C, c_labels, clusterer, client_to_cluster_dictionary
-
-
-# def __test_clustering():
-#     from sklearn.datasets import load_digits
-#     from sklearn.cluster import OPTICS
-#     digits = load_digits()
-#     data = digits.data
-#     ids = np.arange(data.shape[0])
-#     c = Clustering(data, 'Affinity', 5)
-#     label = c.predict(data[1])
-#     print(label)
-#
-# if __name__ == '__main__':
-#     __test_clustering()

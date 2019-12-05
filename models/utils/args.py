@@ -66,11 +66,29 @@ def parse_args():
                     help='simulation time: small, medium, or large;',
                     type=str,
                     choices=SIM_TIMES,
-                    default='large')
+                    default='small')
     parser.add_argument('-lr',
                     help='learning rate for local optimizers;',
                     type=float,
                     default=-1,
                     required=False)
+    # PR stands for personalization round - i.e. when to start personalization
+    # Set this to -1 for no personalization ever
+    parser.add_argument('-pr',
+                        type=int,
+                        default=0,
+                        required=False)
+    # Percent of online clients to use for creating personal models
+    parser.add_argument('-personalization',
+                        type=float,
+                        default=.5,
+                        required=False)
+    parser.add_argument('-clusterer',
+                        type=str,
+                        choices=['Affinity', 'Agglo', 'Birch'],
+                        default='Affinity')
+    parser.add_argument('-num_clusters',
+                        type=int,
+                        default=10)
 
     return parser.parse_args()
