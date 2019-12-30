@@ -24,7 +24,9 @@ class Model(ABC):
             # self.features, self.labels, self.train_op, self.grad_op, self.eval_metric_ops, self.loss = self.create_model()
             self.features, self.labels, self.grad_op, self.eval_metric_ops, self.loss = self.create_model()
             self.saver = tf.train.Saver()
-        self.sess = tf.Session(graph=self.graph)
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        self.sess = tf.Session(graph=self.graph, config=config)
 
         self.size = graph_size(self.graph)
 
