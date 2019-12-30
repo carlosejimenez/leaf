@@ -74,20 +74,20 @@ def parse_args():
                     required=False)
     # PR stands for personalization round - i.e. when to start personalization
     # Set this to -1 for no personalization ever
-    parser.add_argument('-pr',
+    parser.add_argument('--pr',
                         type=int,
                         default=0,
                         required=False)
     # Percent of online clients to use for creating personal models
-    parser.add_argument('-personalization',
+    parser.add_argument('--personalization',
                         type=float,
                         default=.5,
                         required=False)
-    parser.add_argument('-clusterer',
+    parser.add_argument('--clusterer',
                         type=str,
                         choices=['Affinity', 'Agglo', 'Birch', 'K-Means'],
                         default='K-Means')
-    parser.add_argument('-num_clusters',
+    parser.add_argument('--num_clusters',
                         type=int,
                         default=10)
 
